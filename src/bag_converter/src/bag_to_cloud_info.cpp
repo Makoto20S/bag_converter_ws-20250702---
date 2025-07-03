@@ -1,4 +1,5 @@
 #include <ros/ros.h>
+#include <ros/package.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <message_filters/subscriber.h>
@@ -98,7 +99,8 @@ public:
         
         // 加载外参
         loadExtrinsics();
-        
+    } 
+    
     void syncCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg,
                      const geometry_msgs::PoseStamped::ConstPtr& pose_msg)
     {
@@ -351,3 +353,4 @@ private:
             lidar_to_imu_transform_ = Eigen::Affine3f::Identity();
         }
     }
+}

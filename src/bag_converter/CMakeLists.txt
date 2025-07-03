@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_ros
   pcl_conversions
   message_generation
+  roslib
 )
 
 find_package(PCL REQUIRED)
@@ -58,4 +59,3 @@ add_definitions(${PCL_DEFINITIONS})
 
 add_executable(bag_to_cloud_info_node src/bag_to_cloud_info.cpp)
 target_link_libraries(bag_to_cloud_info_node ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES})
-add_dependencies(bag_to_cloud_info_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
