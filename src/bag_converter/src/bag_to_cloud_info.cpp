@@ -331,6 +331,7 @@ public:
         
         global_map_pub_.publish(global_map_msg);
     }
+};
 
     void BagToCloudInfoConverter::loadExtrinsics()
     {
@@ -367,7 +368,6 @@ public:
             lidar_to_imu_transform_ = Eigen::Affine3f::Identity();
         }
     }
-};
 
 int main(int argc, char** argv)
 {
