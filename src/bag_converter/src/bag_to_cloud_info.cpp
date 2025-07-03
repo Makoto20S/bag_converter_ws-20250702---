@@ -54,6 +54,9 @@ private:
     // 雷达到IMU的外参
     Eigen::Affine3f lidar_to_imu_transform_;
     
+    // 函数声明
+    void loadExtrinsics();
+    
 public:
     BagToCloudInfoConverter(const std::string& device_id) : nh_("~"), device_id_(device_id)
     {
@@ -301,24 +304,8 @@ public:
         
         global_map_pub_.publish(global_map_msg);
     }
-};
 
-int main(int argc, char** argv)
-{
-    ros::init(argc, argv, "dual_bag_to_cloud_info_converter");
-    
-    // 创建两个设备的转换器
-    BagToCloudInfoConverter converter_0("0");
-    BagToCloudInfoConverter converter_1("1");
-    
-    ROS_INFO("Starting dual-device real-time bag to cloud_info converter with global mapping...");
-    ros::spin();
-    
-    return 0;
-}
-
-private:
-    void loadExtrinsics()
+    void BagToCloudInfoConverter::loadExtrinsics()
     {
         try {
             std::string config_path = ros::package::getPath("bag_converter") + "/config/extrinsics.yaml";
@@ -353,4 +340,18 @@ private:
             lidar_to_imu_transform_ = Eigen::Affine3f::Identity();
         }
     }
+};
+
+int main(int argc, char** argv)
+{
+    ros::init(argc, argv, "dual_bag_to_cloud_info_converter");
+    
+    // 创建两个设备的转换器
+    BagToCloudInfoConverter converter_0("0");
+    BagToCloudInfoConverter converter_1("1");
+    
+    ROS_INFO("Starting dual-device real-time bag to cloud_info converter with global mapping...");
+    ros::spin();
+    
+    return 0;
 }
