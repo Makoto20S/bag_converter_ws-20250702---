@@ -186,13 +186,40 @@ public:
         
         transformStamped.header.stamp = pose_msg->header.stamp;
         transformStamped.header.frame_id = "map";
-        transformStamped.child_frame_id = frame_id_;
+        transformStamped.child_frame_id = "ouster/" + device_id_ + "/base_link";  // 改为雷达坐标系
         
-        transformStamped.transform.translation.x = pose_msg->pose.position.x;
-        transformStamped.transform.translation.y = pose_msg->pose.position.y;
-        transformStamped.transform.translation.z = pose_msg->pose.position.z;
+        // 创建位姿变换矩阵
+        Eigen::Affine3f pose_transform = Eigen::Affine3f::Identity();
+        pose_transform.translation() << pose_msg->pose.position.x,
+                                       pose_msg->pose.position.y,
+                                       pose_msg->pose.position.z;
         
-        transformStamped.transform.rotation = pose_msg->pose.orientation;
+        Eigen::Quaternionf quat(
+            pose_msg->pose.orientation.w,
+            pose_msg->pose.orientation.x,
+            pose_msg->pose.orientation.y,
+            pose_msg->pose.orientation.z
+        );
+        quat.normalize();
+        pose_transform.linear() = quat.toRotationMatrix();
+        
+        // 结合外参变换：从雷达系到全局系的完整变换
+        Eigen::Affine3f combined_transform = pose_transform * lidar_to_imu_transform_;
+        
+        // 提取变换结果
+        Eigen::Vector3f translation = combined_transform.translation();
+        Eigen::Quaternionf rotation(combined_transform.linear());
+        rotation.normalize();
+        
+        // 设置TF变换
+        transformStamped.transform.translation.x = translation.x();
+        transformStamped.transform.translation.y = translation.y();
+        transformStamped.transform.translation.z = translation.z();
+        
+        transformStamped.transform.rotation.x = rotation.x();
+        transformStamped.transform.rotation.y = rotation.y();
+        transformStamped.transform.rotation.z = rotation.z();
+        transformStamped.transform.rotation.w = rotation.w();
         
         tf_broadcaster_.sendTransform(transformStamped);
     }
