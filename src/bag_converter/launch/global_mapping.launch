@@ -1,35 +1,10 @@
 <launch>
-    <!-- 输入话题参数 -->
-    <arg name="cloud_topic_0" default="/location/ky_cloud_0" />
-    <arg name="pose_topic_0" default="/location/ky_pose_ins_0" />
-    <arg name="cloud_topic_1" default="/location/ky_cloud_1" />
-    <arg name="pose_topic_1" default="/location/ky_pose_ins_1" />
-    
-    <!-- 输出话题参数 -->
-    <arg name="output_topic_0" default="/cloud_info_0" />
-    <arg name="output_topic_1" default="/cloud_info_1" />
-    <arg name="global_map_topic_0" default="/global_map_0" />
-    <arg name="global_map_topic_1" default="/global_map_1" />
-    
-    <!-- 全局地图参数 -->
-    <arg name="voxel_size" default="0.5" />
-    <arg name="max_global_points" default="1000000" />
+    <!-- 加载配置文件 -->
+    <rosparam command="load" file="$(find bag_converter)/config/extrinsics.yaml" />
     
     <!-- 启动转换节点 -->
-    <node name="dual_bag_to_cloud_info_converter" pkg="bag_converter" type="bag_to_cloud_info_node" output="screen">
-        <param name="cloud_topic_0" value="$(arg cloud_topic_0)" />
-        <param name="pose_topic_0" value="$(arg pose_topic_0)" />
-        <param name="output_topic_0" value="$(arg output_topic_0)" />
-        <param name="global_map_topic_0" value="$(arg global_map_topic_0)" />
-        
-        <param name="cloud_topic_1" value="$(arg cloud_topic_1)" />
-        <param name="pose_topic_1" value="$(arg pose_topic_1)" />
-        <param name="output_topic_1" value="$(arg output_topic_1)" />
-        <param name="global_map_topic_1" value="$(arg global_map_topic_1)" />
-        
-        <param name="voxel_size" value="$(arg voxel_size)" />
-        <param name="max_global_points" value="$(arg max_global_points)" />
-    </node>
+    <node name="dual_bag_to_cloud_info_converter" pkg="bag_converter" type="bag_to_cloud_info_node" output="screen" />
+    
     <!-- 启动 RViz 可视化 -->
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find bag_converter)/rviz/accumulation_visualization.rviz" />
 </launch>

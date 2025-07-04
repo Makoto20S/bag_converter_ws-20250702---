@@ -15,3 +15,25 @@ extrinsic_1:
   roll: -0.04905374
   pitch: -0.0173372
   yaw: -0.86712757
+
+# 话题配置
+topics:
+  # Device 0 话题
+  cloud_topic_0: "/location/ky_cloud_0"
+  pose_topic_0: "/location/ky_pose_ins_0"
+  output_topic_0: "/cloud_info_0"
+  global_map_topic_0: "/global_map_0"
+  transformed_cloud_topic_0: "/transformed_cloud_0"
+  
+  # Device 1 话题
+  cloud_topic_1: "/location/ky_cloud_1"
+  pose_topic_1: "/location/ky_pose_ins_1"
+  output_topic_1: "/cloud_info_1"
+  global_map_topic_1: "/global_map_1"
+  transformed_cloud_topic_1: "/transformed_cloud_1"
+
+# 全局地图参数
+global_mapping:
+  voxel_size: 0.5
+  max_global_points: 1000000
+  distance_threshold: 2.0

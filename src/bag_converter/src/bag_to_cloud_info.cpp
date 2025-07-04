@@ -60,7 +60,7 @@ private:
     double distance_threshold_;
     
     // 函数声明
-    void loadExtrinsics();
+    // void loadExtrinsics();
 
     // 计算两点之间的距离
     double calculateDistance(const geometry_msgs::Point& p1, const geometry_msgs::Point& p2)
@@ -141,7 +141,32 @@ public:
         ROS_INFO("  Voxel size: %.3f", voxel_size_);
         
         // 加载外参
-        loadExtrinsics();
+        // loadExtrinsics();
+        std::string extrinsic_key = "extrinsic_" + device_id_;
+    
+        double x, y, z, roll, pitch, yaw;
+        if (nh_.getParam(extrinsic_key + "/x", x) &&
+            nh_.getParam(extrinsic_key + "/y", y) &&
+            nh_.getParam(extrinsic_key + "/z", z) &&
+            nh_.getParam(extrinsic_key + "/roll", roll) &&
+            nh_.getParam(extrinsic_key + "/pitch", pitch) &&
+            nh_.getParam(extrinsic_key + "/yaw", yaw)) {
+            
+            // 创建雷达到IMU的变换矩阵
+            lidar_to_imu_transform_ = Eigen::Affine3f::Identity();
+            lidar_to_imu_transform_.translation() << x, y, z;
+            
+            Eigen::AngleAxisf rollAngle(roll, Eigen::Vector3f::UnitX());
+            Eigen::AngleAxisf pitchAngle(pitch, Eigen::Vector3f::UnitY());
+            Eigen::AngleAxisf yawAngle(yaw, Eigen::Vector3f::UnitZ());
+            lidar_to_imu_transform_.linear() = (yawAngle * pitchAngle * rollAngle).matrix();
+            
+            ROS_INFO("Device %s: Loaded extrinsics from parameter server [%.3f, %.3f, %.3f, %.3f, %.3f, %.3f]", 
+                    device_id_.c_str(), x, y, z, roll, pitch, yaw);
+            } else {
+                ROS_ERROR("Device %s: Failed to load extrinsic parameters from parameter server", device_id_.c_str());
+                lidar_to_imu_transform_ = Eigen::Affine3f::Identity();
+            }
     } 
     
     void syncCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg,
@@ -385,41 +410,41 @@ public:
     }
 };
 
-    void BagToCloudInfoConverter::loadExtrinsics()
-    {
-        try {
-            std::string config_path = ros::package::getPath("bag_converter") + "/config/extrinsics.yaml";
-            YAML::Node config = YAML::LoadFile(config_path);
+    // void BagToCloudInfoConverter::loadExtrinsics()
+    // {
+    //     try {
+    //         std::string config_path = ros::package::getPath("bag_converter") + "/config/extrinsics.yaml";
+    //         YAML::Node config = YAML::LoadFile(config_path);
             
-            std::string extrinsic_key = "extrinsic_" + device_id_;
-            if (config[extrinsic_key]) {
-                double x = config[extrinsic_key]["x"].as<double>();
-                double y = config[extrinsic_key]["y"].as<double>();
-                double z = config[extrinsic_key]["z"].as<double>();
-                double roll = config[extrinsic_key]["roll"].as<double>();
-                double pitch = config[extrinsic_key]["pitch"].as<double>();
-                double yaw = config[extrinsic_key]["yaw"].as<double>();
+    //         std::string extrinsic_key = "extrinsic_" + device_id_;
+    //         if (config[extrinsic_key]) {
+    //             double x = config[extrinsic_key]["x"].as<double>();
+    //             double y = config[extrinsic_key]["y"].as<double>();
+    //             double z = config[extrinsic_key]["z"].as<double>();
+    //             double roll = config[extrinsic_key]["roll"].as<double>();
+    //             double pitch = config[extrinsic_key]["pitch"].as<double>();
+    //             double yaw = config[extrinsic_key]["yaw"].as<double>();
                 
-                // 创建雷达到IMU的变换矩阵
-                lidar_to_imu_transform_ = Eigen::Affine3f::Identity();
-                lidar_to_imu_transform_.translation() << x, y, z;
+    //             // 创建雷达到IMU的变换矩阵
+    //             lidar_to_imu_transform_ = Eigen::Affine3f::Identity();
+    //             lidar_to_imu_transform_.translation() << x, y, z;
                 
-                Eigen::AngleAxisf rollAngle(roll, Eigen::Vector3f::UnitX());
-                Eigen::AngleAxisf pitchAngle(pitch, Eigen::Vector3f::UnitY());
-                Eigen::AngleAxisf yawAngle(yaw, Eigen::Vector3f::UnitZ());
-                lidar_to_imu_transform_.linear() = (yawAngle * pitchAngle * rollAngle).matrix();
+    //             Eigen::AngleAxisf rollAngle(roll, Eigen::Vector3f::UnitX());
+    //             Eigen::AngleAxisf pitchAngle(pitch, Eigen::Vector3f::UnitY());
+    //             Eigen::AngleAxisf yawAngle(yaw, Eigen::Vector3f::UnitZ());
+    //             lidar_to_imu_transform_.linear() = (yawAngle * pitchAngle * rollAngle).matrix();
                 
-                ROS_INFO("Device %s: Loaded extrinsics [%.3f, %.3f, %.3f, %.3f, %.3f, %.3f]", 
-                        device_id_.c_str(), x, y, z, roll, pitch, yaw);
-            } else {
-                ROS_ERROR("Device %s: Extrinsic parameters not found in config file", device_id_.c_str());
-                lidar_to_imu_transform_ = Eigen::Affine3f::Identity();
-            }
-        } catch (const std::exception& e) {
-            ROS_ERROR("Failed to load extrinsics: %s", e.what());
-            lidar_to_imu_transform_ = Eigen::Affine3f::Identity();
-        }
-    }
+    //             ROS_INFO("Device %s: Loaded extrinsics [%.3f, %.3f, %.3f, %.3f, %.3f, %.3f]", 
+    //                     device_id_.c_str(), x, y, z, roll, pitch, yaw);
+    //         } else {
+    //             ROS_ERROR("Device %s: Extrinsic parameters not found in config file", device_id_.c_str());
+    //             lidar_to_imu_transform_ = Eigen::Affine3f::Identity();
+    //         }
+    //     } catch (const std::exception& e) {
+    //         ROS_ERROR("Failed to load extrinsics: %s", e.what());
+    //         lidar_to_imu_transform_ = Eigen::Affine3f::Identity();
+    //     }
+    // }
 
 int main(int argc, char** argv)
 {
