@@ -54,14 +54,53 @@ private:
     // 雷达到IMU的外参
     Eigen::Affine3f lidar_to_imu_transform_;
     
+    // 位置跟踪变量
+    bool first_pose_received_;
+    geometry_msgs::Point last_published_position_;
+    double distance_threshold_;
+    
     // 函数声明
     void loadExtrinsics();
+
+    // 计算两点之间的距离
+    double calculateDistance(const geometry_msgs::Point& p1, const geometry_msgs::Point& p2)
+    {
+        double dx = p1.x - p2.x;
+        double dy = p1.y - p2.y;
+        double dz = p1.z - p2.z;
+        return sqrt(dx*dx + dy*dy + dz*dz);
+    }
+    
+    // 检查是否需要发布（距离阈值判断）
+    bool shouldPublish(const geometry_msgs::Point& current_position)
+    {
+        if (!first_pose_received_) {
+            first_pose_received_ = true;
+            last_published_position_ = current_position;
+            return true;  // 第一次接收到位姿时发布
+        }
+        
+        double distance = calculateDistance(current_position, last_published_position_);
+        if (distance >= distance_threshold_) {
+            last_published_position_ = current_position;
+            return true;
+        }
+        
+        return false;
+    }
     
 public:
     BagToCloudInfoConverter(const std::string& device_id) : nh_("~"), device_id_(device_id)
     {
         // 初始化全局点云
         global_map_.reset(new pcl::PointCloud<pcl::PointXYZ>());
+        
+        // 初始化位置跟踪变量
+        first_pose_received_ = false;
+        distance_threshold_ = 2.0;  // 2米阈值
+        last_published_position_.x = 0.0;
+        last_published_position_.y = 0.0;
+        last_published_position_.z = 0.0;
         
         // 获取参数
         nh_.param<std::string>("cloud_topic_" + device_id, cloud_topic_, "/location/ky_cloud_" + device_id);
@@ -72,6 +111,7 @@ public:
         nh_.param<std::string>("transformed_cloud_topic_" + device_id, transformed_cloud_topic, "/transformed_cloud_" + device_id);
         nh_.param<double>("voxel_size", voxel_size_, 0.1);
         nh_.param<int>("max_global_points", max_global_points_, 1000000);
+        nh_.param<double>("distance_threshold", distance_threshold_, 2.0);  // 可配置的距离阈值
         
         frame_id_ = "robot_" + device_id + "_base_link";
         
@@ -116,6 +156,10 @@ public:
                             pose_msg->header.stamp.sec, pose_msg->header.stamp.nsec);
             return;  // 时间不一致，直接返回
         }
+        
+        // 检查是否需要发布（基于距离阈值）
+        geometry_msgs::Point current_position = pose_msg->pose.position;
+        bool should_publish = shouldPublish(current_position);
         
         // 创建cloud_info消息
         bag_converter::cloud_info cloud_info_msg;
@@ -170,11 +214,18 @@ public:
         // 发布cloud_info消息
         cloud_info_pub_.publish(cloud_info_msg);
         
-        // 发布TF变换
-        publishTF(pose_msg);
-        
-        // 更新全局点云
-        updateGlobalMap(cloud_msg, pose_msg);
+        // 只有当距离变化超过阈值时才发布TF变换和更新全局地图
+        if (should_publish) {
+            // 发布TF变换
+            publishTF(pose_msg);
+            
+            // 更新全局点云
+            updateGlobalMap(cloud_msg, pose_msg);
+            
+            ROS_INFO("Device %s: Published TF and global map at position [%.2f, %.2f, %.2f], distance moved: %.2f m", 
+                     device_id_.c_str(), x, y, z, 
+                     first_pose_received_ ? calculateDistance(current_position, last_published_position_) : 0.0);
+        }
         
         ROS_INFO_THROTTLE(2.0, "Device %s: Published cloud_info with pose [%.2f, %.2f, %.2f, %.2f, %.2f, %.2f], Global map size: %lu", 
                          device_id_.c_str(), x, y, z, roll, pitch, yaw, global_map_->points.size());
