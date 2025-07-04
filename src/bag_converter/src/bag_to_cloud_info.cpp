@@ -90,7 +90,7 @@ private:
     }
     
 public:
-    BagToCloudInfoConverter(const std::string& device_id) : nh_("~"), device_id_(device_id)
+    BagToCloudInfoConverter(const std::string& device_id) : nh_(), device_id_(device_id)  // 移除"~"
     {
         // 初始化全局点云
         global_map_.reset(new pcl::PointCloud<pcl::PointXYZ>());
