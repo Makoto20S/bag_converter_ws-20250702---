@@ -209,13 +209,48 @@ public:
         double roll, pitch, yaw;
         mat.getRPY(roll, pitch, yaw);
         
-        // 设置位姿信息
-        cloud_info_msg.initialGuessX = x;
-        cloud_info_msg.initialGuessY = y;
-        cloud_info_msg.initialGuessZ = z;
-        cloud_info_msg.initialGuessRoll = roll;
-        cloud_info_msg.initialGuessPitch = pitch;
-        cloud_info_msg.initialGuessYaw = yaw;
+        // 创建位姿变换矩阵
+        Eigen::Affine3f pose_transform = Eigen::Affine3f::Identity();
+        pose_transform.translation() << x, y, z;
+        
+        Eigen::Quaternionf eigen_quat(
+            pose_msg->pose.orientation.w,
+            pose_msg->pose.orientation.x,
+            pose_msg->pose.orientation.y,
+            pose_msg->pose.orientation.z
+        );
+        eigen_quat.normalize();
+        pose_transform.linear() = eigen_quat.toRotationMatrix();
+        
+        // 结合外参变换：从雷达系到全局系的完整变换
+        Eigen::Affine3f combined_transform = pose_transform * lidar_to_imu_transform_;
+        
+        // 提取变换后的位置
+        Eigen::Vector3f transformed_translation = combined_transform.translation();
+        
+        // 提取变换后的旋转并转换为欧拉角
+        Eigen::Quaternionf transformed_rotation(combined_transform.linear());
+        transformed_rotation.normalize();
+        
+        // 转换为tf2四元数以便提取欧拉角
+        tf2::Quaternion transformed_quat(
+            transformed_rotation.x(),
+            transformed_rotation.y(),
+            transformed_rotation.z(),
+            transformed_rotation.w()
+        );
+        
+        tf2::Matrix3x3 transformed_mat(transformed_quat);
+        double transformed_roll, transformed_pitch, transformed_yaw;
+        transformed_mat.getRPY(transformed_roll, transformed_pitch, transformed_yaw);
+        
+        // 设置变换后的位姿信息
+        cloud_info_msg.initialGuessX = transformed_translation.x();
+        cloud_info_msg.initialGuessY = transformed_translation.y();
+        cloud_info_msg.initialGuessZ = transformed_translation.z();
+        cloud_info_msg.initialGuessRoll = transformed_roll;
+        cloud_info_msg.initialGuessPitch = transformed_pitch;
+        cloud_info_msg.initialGuessYaw = transformed_yaw;
         
         // 设置可用性标志
         cloud_info_msg.imuAvailable = false;  // 没有IMU数据
@@ -261,7 +296,14 @@ public:
         geometry_msgs::TransformStamped transformStamped;
         
         transformStamped.header.stamp = pose_msg->header.stamp;
-        transformStamped.header.frame_id = "map";
+        // 根据设备ID设置不同的frame_id
+        if (device_id_ == "0") {
+            transformStamped.header.frame_id = "map";
+        } else if (device_id_ == "1") {
+            transformStamped.header.frame_id = "1/odom";
+        } else {
+            transformStamped.header.frame_id = "map";  // 默认值
+        }
         // transformStamped.child_frame_id = "ouster/" + device_id_ + "/base_link";  // 改为雷达坐标系
         transformStamped.child_frame_id = "body";
         
