@@ -186,7 +186,8 @@ public:
         
         transformStamped.header.stamp = pose_msg->header.stamp;
         transformStamped.header.frame_id = "map";
-        transformStamped.child_frame_id = "ouster/" + device_id_ + "/base_link";  // 改为雷达坐标系
+        // transformStamped.child_frame_id = "ouster/" + device_id_ + "/base_link";  // 改为雷达坐标系
+        transformStamped.child_frame_id = "body";
         
         // 创建位姿变换矩阵
         Eigen::Affine3f pose_transform = Eigen::Affine3f::Identity();
