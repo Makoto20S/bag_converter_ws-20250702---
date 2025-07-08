@@ -14,80 +14,15 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/common/transforms.h>
 #include <pcl/filters/voxel_grid.h>
-#include "bag_converter/cloud_info.h"
+#include "msg/cloud_info.h"
 #include <yaml-cpp/yaml.h>
 
 class BagToCloudInfoConverter
 {
 private:
     ros::NodeHandle nh_;
+    // 修改发布者类型
     ros::Publisher cloud_info_pub_;
-    ros::Publisher global_map_pub_;
-    ros::Publisher transformed_cloud_pub_;
-    
-    // TF broadcaster
-    tf2_ros::TransformBroadcaster tf_broadcaster_;
-    
-    // 使用message_filters进行时间同步
-    message_filters::Subscriber<sensor_msgs::PointCloud2> cloud_sub_;
-    message_filters::Subscriber<geometry_msgs::PoseStamped> pose_sub_;
-    
-    typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::PointCloud2, geometry_msgs::PoseStamped> SyncPolicy;
-    typedef message_filters::Synchronizer<SyncPolicy> Synchronizer;
-    boost::shared_ptr<Synchronizer> sync_;
-    
-    std::string cloud_topic_;
-    std::string pose_topic_;
-    std::string output_topic_;
-    std::string global_map_topic_;
-    std::string device_id_;
-    std::string frame_id_;
-    
-    // 全局点云存储
-    pcl::PointCloud<pcl::PointXYZ>::Ptr global_map_;
-    pcl::VoxelGrid<pcl::PointXYZ> voxel_filter_;
-    
-    // 参数
-    double voxel_size_;
-    int max_global_points_;
-    
-    // 雷达到IMU的外参
-    Eigen::Affine3f lidar_to_imu_transform_;
-    
-    // 位置跟踪变量
-    bool first_pose_received_;
-    geometry_msgs::Point last_published_position_;
-    double distance_threshold_;
-    
-    // 函数声明
-    // void loadExtrinsics();
-
-    // 计算两点之间的距离
-    double calculateDistance(const geometry_msgs::Point& p1, const geometry_msgs::Point& p2)
-    {
-        double dx = p1.x - p2.x;
-        double dy = p1.y - p2.y;
-        double dz = p1.z - p2.z;
-        return sqrt(dx*dx + dy*dy + dz*dz);
-    }
-    
-    // 检查是否需要发布（距离阈值判断）
-    bool shouldPublish(const geometry_msgs::Point& current_position)
-    {
-        if (!first_pose_received_) {
-            first_pose_received_ = true;
-            last_published_position_ = current_position;
-            return true;  // 第一次接收到位姿时发布
-        }
-        
-        double distance = calculateDistance(current_position, last_published_position_);
-        if (distance >= distance_threshold_) {
-            last_published_position_ = current_position;
-            return true;
-        }
-        
-        return false;
-    }
     
 public:
     BagToCloudInfoConverter(const std::string& device_id) : nh_(), device_id_(device_id)  // 移除"~"
@@ -119,7 +54,7 @@ public:
         voxel_filter_.setLeafSize(voxel_size_, voxel_size_, voxel_size_);
         
         // 初始化发布者
-        cloud_info_pub_ = nh_.advertise<bag_converter::cloud_info>(output_topic_, 10);
+        cloud_info_pub_ = nh_.advertise<lio_sam::cloud_info>(output_topic_, 10);
         global_map_pub_ = nh_.advertise<sensor_msgs::PointCloud2>(global_map_topic_, 1);
         transformed_cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2>(transformed_cloud_topic, 10);
         
@@ -187,7 +122,7 @@ public:
         bool should_publish = shouldPublish(current_position);
         
         // 创建cloud_info消息
-        bag_converter::cloud_info cloud_info_msg;
+        lio_sam::cloud_info cloud_info_msg;
         
         // 设置header
         cloud_info_msg.header = cloud_msg->header;
