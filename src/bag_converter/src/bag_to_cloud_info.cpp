@@ -366,17 +366,3 @@ void BagToCloudInfoConverter::publishGlobalMap(const ros::Time& stamp)
     
     global_map_pub_.publish(global_map_msg);
 }
-
-int main(int argc, char** argv)
-{
-    ros::init(argc, argv, "dual_bag_to_cloud_info_converter");
-    
-    // 创建两个设备的转换器
-    BagToCloudInfoConverter converter_0("0");
-    BagToCloudInfoConverter converter_1("1");
-    
-    ROS_INFO("Starting dual-device real-time bag to cloud_info converter with global mapping...");
-    ros::spin();
-    
-    return 0;
-}
