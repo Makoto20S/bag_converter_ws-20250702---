@@ -32,7 +32,7 @@ BagToCloudInfoConverter::BagToCloudInfoConverter(const std::string& device_id)
     voxel_filter_.setLeafSize(voxel_size_, voxel_size_, voxel_size_);
     
     // 初始化发布者
-    cloud_info_pub_ = nh_.advertise<bag_converter::cloud_info>(output_topic_, 10);
+    cloud_info_pub_ = nh_.advertise<lio_sam::cloud_info>(output_topic_, 10);
     global_map_pub_ = nh_.advertise<sensor_msgs::PointCloud2>(global_map_topic_, 1);
     transformed_cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2>(transformed_cloud_topic, 10);
     
@@ -127,7 +127,7 @@ void BagToCloudInfoConverter::syncCallback(const sensor_msgs::PointCloud2ConstPt
     bool should_publish = shouldPublish(current_position);
     
     // 创建cloud_info消息
-    bag_converter::cloud_info cloud_info_msg;
+    lio_sam::cloud_info cloud_info_msg;
     
     // 设置header
     cloud_info_msg.header = cloud_msg->header;

@@ -16,7 +16,7 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/common/transforms.h>
 #include <pcl/filters/voxel_grid.h>
-#include "bag_converter/cloud_info.h"
+#include "../include/cloud_info.h"
 
 class BagToCloudInfoConverter
 {

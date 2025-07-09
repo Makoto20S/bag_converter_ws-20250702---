@@ -13,7 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_geometry_msgs
   pcl_ros
   pcl_conversions
-  message_generation
+  # message_generation 
   roslib
 )
 
@@ -21,16 +21,23 @@ find_package(PCL REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(YAML_CPP REQUIRED yaml-cpp)
 
-add_message_files(
-  FILES
-  cloud_info.msg
-)
+# add_message_files(
+#   FILES
+#   cloud_info.msg
+# )
 
-generate_messages(
-  DEPENDENCIES
-  std_msgs
-  sensor_msgs
-  geometry_msgs
+# generate_messages(
+#   DEPENDENCIES
+#   std_msgs
+#   sensor_msgs
+#   geometry_msgs
+# )
+
+# 在 include_directories 中添加 include 文件夹
+include_directories(
+  ${catkin_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
+  include  # 添加这一行
 )
 
 catkin_package(
@@ -46,7 +53,7 @@ catkin_package(
     tf2_geometry_msgs
     pcl_ros
     pcl_conversions
-    message_runtime
+    # message_runtime  
 )
 
 include_directories(
