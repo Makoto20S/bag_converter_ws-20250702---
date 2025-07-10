@@ -132,16 +132,6 @@ void BagToCloudInfoConverter::syncCallback(const sensor_msgs::PointCloud2ConstPt
     // 设置header
     cloud_info_msg.header = cloud_msg->header;
     
-    // 根据设备ID设置正确的frame_id
-    // 修改frame_id设置
-    if (device_id_ == "0") {
-    frame_id_ = "ouster0/base_link";
-    } else if (device_id_ == "1") {
-    frame_id_ = "ouster1/base_link";
-    } else {
-    frame_id_ = "ouster" + device_id_ + "/base_link";  // 通用格式
-    }
-    
     // 从位姿消息中提取位置和姿态
     double x = pose_msg->pose.position.x;
     double y = pose_msg->pose.position.y;
@@ -242,22 +232,22 @@ void BagToCloudInfoConverter::syncCallback(const sensor_msgs::PointCloud2ConstPt
 }
 
 // 发布TF变换
+//void BagToCloudInfoConverter::publishTF(const geometry_msgs::PoseStamped::ConstPtr& pose_msg)
 void BagToCloudInfoConverter::publishTF(const geometry_msgs::PoseStampedConstPtr& pose_msg)
 {
     geometry_msgs::TransformStamped transformStamped;
     
+    //transformStamped.header.stamp = pose_msg->header.stamp;
     transformStamped.header.stamp = ros::Time::now();
     // 根据设备ID设置不同的frame_id
     if (device_id_ == "0") {
-        transformStamped.header.frame_id = "map";  // 设备0作为基准设备，使用map系
-        transformStamped.child_frame_id = "body";
+        transformStamped.header.frame_id = "map";
     } else if (device_id_ == "1") {
-        transformStamped.header.frame_id = "1/odom";  // 设备1使用1/odom系
-        transformStamped.child_frame_id = "body";
+        transformStamped.header.frame_id = "1/odom";
     } else {
-        transformStamped.header.frame_id = device_id_ + "/odom";  // 通用格式
-        transformStamped.child_frame_id = "body";
+        transformStamped.header.frame_id = "000";  // 默认值
     }
+    transformStamped.child_frame_id = "body";
     
     // 创建位姿变换矩阵
     Eigen::Affine3f pose_transform = Eigen::Affine3f::Identity();
@@ -359,8 +349,14 @@ void BagToCloudInfoConverter::publishTransformedCloud(const pcl::PointCloud<pcl:
     sensor_msgs::PointCloud2 transformed_cloud_msg;
     pcl::toROSMsg(*transformed_cloud, transformed_cloud_msg);
     transformed_cloud_msg.header.stamp = stamp;
-    transformed_cloud_msg.header.frame_id = "map";  // 全局坐标系
-
+    //transformed_cloud_msg.header.frame_id = "map";  // 全局坐标系
+    if (device_id_ == "0") {
+        transformed_cloud_msg.header.frame_id = "map";
+    } else if (device_id_ == "1") {
+        transformed_cloud_msg.header.frame_id = "1/odom";
+    } else {
+        transformed_cloud_msg.header.frame_id = "000";  // 默认值
+    }
     transformed_cloud_pub_.publish(transformed_cloud_msg);
 }
 
@@ -374,7 +370,13 @@ void BagToCloudInfoConverter::publishGlobalMap(const ros::Time& stamp)
     sensor_msgs::PointCloud2 global_map_msg;
     pcl::toROSMsg(*global_map_, global_map_msg);
     global_map_msg.header.stamp = stamp;
-    global_map_msg.header.frame_id = "map";
-    
+    //global_map_msg.header.frame_id = "map";
+    if (device_id_ == "0") {
+        global_map_msg.header.frame_id = "map";
+    } else if (device_id_ == "1") {
+        global_map_msg.header.frame_id = "1/odom";
+    } else {
+        global_map_msg.header.frame_id = "000";  // 默认值
+    }
     global_map_pub_.publish(global_map_msg);
 }
