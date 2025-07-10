@@ -1,5 +1,4 @@
-#include "bag_to_cloud_info.h"
-#include <yaml-cpp/yaml.h>
+clude <yaml-cpp/yaml.h>
 
 // 构造函数实现
 BagToCloudInfoConverter::BagToCloudInfoConverter(const std::string& device_id) 
@@ -132,6 +131,16 @@ void BagToCloudInfoConverter::syncCallback(const sensor_msgs::PointCloud2ConstPt
     // 设置header
     cloud_info_msg.header = cloud_msg->header;
     
+    // 根据设备ID设置正确的frame_id
+    // 修改frame_id设置
+    if (device_id_ == "0") {
+    frame_id_ = "ouster0/base_link";
+    } else if (device_id_ == "1") {
+    frame_id_ = "ouster1/base_link";
+    } else {
+    frame_id_ = "ouster" + device_id_ + "/base_link";  // 通用格式
+    }
+    
     // 从位姿消息中提取位置和姿态
     double x = pose_msg->pose.position.x;
     double y = pose_msg->pose.position.y;
@@ -239,11 +248,14 @@ void BagToCloudInfoConverter::publishTF(const geometry_msgs::PoseStamped::ConstP
     transformStamped.header.stamp = pose_msg->header.stamp;
     // 根据设备ID设置不同的frame_id
     if (device_id_ == "0") {
-        transformStamped.header.frame_id = "map";
+        transformStamped.header.frame_id = "0/odom";
+        transformStamped.child_frame_id = "ouster0/base_link";
     } else if (device_id_ == "1") {
         transformStamped.header.frame_id = "1/odom";
+        transformStamped.child_frame_id = "ouster1/base_link";
     } else {
-        transformStamped.header.frame_id = "map";  // 默认值
+        transformStamped.header.frame_id = device_id_ + "/odom";  // 通用格式
+        transformStamped.child_frame_id = "ouster" + device_id_ + "/base_link";
     }
     transformStamped.child_frame_id = "body";
     

@@ -1,0 +1,13 @@
+输入数据流：
+点云话题 (/location/ky_cloud_X) ──┐
+                              ├─→ 时间同步 ─→ syncCallback
+位姿话题 (/location/ky_pose_ins_X) ─┘
+
+处理流程：
+syncCallback ─→ 时间戳验证 ─→ 距离判断 ─→ 坐标变换 ─→ 消息创建
+
+输出数据流：
+├─→ cloud_info消息 (/cloud_info_X)     [每次]
+├─→ TF变换 (map→body)                  [距离阈值]
+├─→ 变换后点云 (/transformed_cloud_X)   [距离阈值]
+└─→ 全局地图 (/global_map_X)           [距离阈值]
