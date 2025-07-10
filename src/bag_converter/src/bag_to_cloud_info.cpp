@@ -242,11 +242,11 @@ void BagToCloudInfoConverter::syncCallback(const sensor_msgs::PointCloud2ConstPt
 }
 
 // 发布TF变换
-void BagToCloudInfoConverter::publishTF(const geometry_msgs::PoseStamped::ConstPtr& pose_msg)
+void BagToCloudInfoConverter::publishTF(const geometry_msgs::PoseStampedConstPtr& pose_msg)
 {
     geometry_msgs::TransformStamped transformStamped;
     
-    transformStamped.header.stamp = pose_msg->header.stamp;
+    transformStamped.header.stamp = ros::Time::now();  // 修改这里
     // 根据设备ID设置不同的frame_id
     if (device_id_ == "0") {
         transformStamped.header.frame_id = "0/odom";
