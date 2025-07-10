@@ -246,19 +246,18 @@ void BagToCloudInfoConverter::publishTF(const geometry_msgs::PoseStampedConstPtr
 {
     geometry_msgs::TransformStamped transformStamped;
     
-    transformStamped.header.stamp = ros::Time::now();  // 修改这里
+    transformStamped.header.stamp = ros::Time::now();
     // 根据设备ID设置不同的frame_id
     if (device_id_ == "0") {
         transformStamped.header.frame_id = "map";  // 设备0作为基准设备，使用map系
-        transformStamped.child_frame_id = "ouster0/base_link";
+        transformStamped.child_frame_id = "body";
     } else if (device_id_ == "1") {
         transformStamped.header.frame_id = "1/odom";  // 设备1使用1/odom系
-        transformStamped.child_frame_id = "ouster1/base_link";
+        transformStamped.child_frame_id = "body";
     } else {
         transformStamped.header.frame_id = device_id_ + "/odom";  // 通用格式
-        transformStamped.child_frame_id = "ouster" + device_id_ + "/base_link";
+        transformStamped.child_frame_id = "body";
     }
-    // 删除了 transformStamped.child_frame_id = "body"; 这行代码
     
     // 创建位姿变换矩阵
     Eigen::Affine3f pose_transform = Eigen::Affine3f::Identity();
