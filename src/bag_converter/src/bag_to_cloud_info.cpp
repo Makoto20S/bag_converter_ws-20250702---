@@ -1,4 +1,5 @@
-clude <yaml-cpp/yaml.h>
+#include "bag_to_cloud_info.h"
+#include <yaml-cpp/yaml.h>
 
 // 构造函数实现
 BagToCloudInfoConverter::BagToCloudInfoConverter(const std::string& device_id) 
